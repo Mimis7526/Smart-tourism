@@ -1,0 +1,110 @@
+version: "3.9"
+
+services:
+  # PostgreSQL with PostGIS extension
+  db:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: smart_tourism
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d smart_tourism"]
+      interval: 10s
+      retries: 5
+
+  # Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # Kafka broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      retries: 5
+
+  # FastAPI backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/smart_tourism
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ARIES_AGENT_URL: http://aries-agent:8021
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./ml/models:/app/models
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Alert consumer (Kafka → push notifications)
+  alert-consumer:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/smart_tourism
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - backend
+      - kafka
+    command: python consumers/alert_consumer.py
+
+  # Aries Cloud Agent (Blockchain DID)
+  aries-agent:
+    image: bcgovimages/aries-cloudagent:py36-1.16-1_0.7.5
+    ports:
+      - "8021:8021"
+      - "8020:8020"
+    command: >
+      start
+        --inbound-transport http 0.0.0.0 8020
+        --outbound-transport http
+        --admin 0.0.0.0 8021
+        --admin-insecure-mode
+        --auto-provision
+        --wallet-type askar
+        --wallet-name smart-tourism-wallet
+        --wallet-key tourism-secret-key
+        --genesis-url https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
